@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Expense Tracker</title>
+
+    <!-- Fonts + CSS -->
+    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+            <!-- Brand -->
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('index') }}">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">Expense Tracker</div>
+            </a>
+
+            <hr class="sidebar-divider">
+
+            <!-- Dashboard -->
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-fw fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <!-- Add Expense -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('add_expense') }}">
+                    <i class="fas fa-fw fa-plus"></i>
+                    <span>Add Expense</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider d-none d-md-block">
+
+            <!-- Sidebar Toggler -->
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+        </ul>
+        <!-- End Sidebar -->
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 shadow">
+
+                    <ul class="navbar-nav ml-auto">
+                        <!-- User Menu -->
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
+                                    USER
+                                </span>
+                                <img class="img-profile rounded-circle"
+                                     src="{{ url_for('static', filename='img/undraw_profile.svg') }}">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+
+                </nav>
+                <!-- End Topbar -->
+
+                <!-- Page Content -->
+                <div class="container-fluid">
+
+                    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
+
+                    <div class="row">
+                        <!-- Total Expenses -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Expenses
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        $0.00
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- End Page Content -->
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+
+</body>
+
+</html>
