@@ -59,5 +59,12 @@ def add_expense():
 def logout():
     pass
 
+@app.route("/charts")
+def load_charts():
+    return render_template("charts.html")
+
+@app.route("/tables")
+def load_tables():
+    return render_template("tables.html")
 if __name__ == "__main__":
     app.run(debug=True, port=5003)
