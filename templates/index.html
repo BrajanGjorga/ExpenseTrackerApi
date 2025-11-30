@@ -36,6 +36,18 @@
                     <span>Dashboard</span>
                 </a>
             </li>
+            <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('load_charts') }}">
+            <i class="fas fa-chart-area"></i>
+            <span>Charts</span>
+        </a>
+    </li>
+            <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('load_tables') }}">
+            <i class="fas fa-table"></i>
+            <span>Tables</span>
+        </a>
+    </li>
 
             <!-- Add Expense -->
             <li class="nav-item">
@@ -69,7 +81,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    USER
+                                    {{ current_user.username }}
                                 </span>
                                 <img class="img-profile rounded-circle"
                                      src="{{ url_for('static', filename='img/undraw_profile.svg') }}">
