@@ -1,11 +1,11 @@
 from functools import wraps
 from os import abort
-
+from datetime import datetime
 from flask import Flask, render_template, request,redirect,flash,url_for
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text, ForeignKey
+from sqlalchemy import Integer, String, Text, ForeignKey, func
 import os
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -109,11 +109,30 @@ def register():
 @app.route("/home")
 @login_required_custom
 def index():
-    return render_template("index.html")
+    total_expenses = db.session.query(func.sum(Expense.amount)).filter(Expense.user_id == current_user.id).scalar()
+    return render_template("index.html",total_expenses=total_expenses)
 
-@app.route("/add_expense")
+@app.route("/add_expense",methods=["POST","GET"])
 @login_required_custom
 def add_expense():
+    if request.method=="POST":
+        category=request.form.get("category")
+        date=request.form.get("date")
+        amount=request.form.get("amount")
+        description=request.form.get("note")
+        user_id=current_user.id
+        date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+        new_expense = Expense(
+            user_id=user_id,
+            category=category,
+            amount=float(amount),
+            date=date_obj,
+            description=description
+        )
+        db.session.add(new_expense)
+        db.session.commit()
+
+        return redirect(url_for("index"))
     return render_template("add_expense.html")
 
 @app.route("/logout")
