@@ -59,6 +59,41 @@ class Expense(db.Model):
 with app.app_context():
     db.create_all()
 
+def get_total_by_month():
+    user_id = current_user.id
+
+    monthly_totals = db.session.query(
+        func.strftime("%Y-%m", Expense.date).label("month"),
+        func.sum(Expense.amount).label("total")
+    ).filter(
+        Expense.user_id == user_id
+    ).group_by(
+        func.strftime("%Y-%m", Expense.date)
+    ).order_by("month").all()
+
+    clean_results = []
+
+    for month, total in monthly_totals:
+        dt = datetime.strptime(month, "%Y-%m")
+        formatted = dt.strftime("%B %Y")  # October 2025
+        clean_results.append((formatted, total))
+    return clean_results
+
+def get_category_for_each_month(selected_month):
+    dt = datetime.strptime(selected_month, "%B %Y")
+    month_filter = dt.strftime("%Y-%m")
+    if selected_month:
+        category_totals = db.session.query(
+            Expense.category,
+            func.sum(Expense.amount).label("total")
+        ).filter(
+            Expense.user_id == current_user.id,
+            func.strftime("%Y-%m", Expense.date) == month_filter
+        ).group_by(
+            Expense.category
+        ).all()
+
+        return category_totals
 
 @app.route("/",methods=["GET","POST"])
 def login():
@@ -110,7 +145,8 @@ def register():
 @login_required_custom
 def index():
     total_expenses = db.session.query(func.sum(Expense.amount)).filter(Expense.user_id == current_user.id).scalar()
-    return render_template("index.html",total_expenses=total_expenses)
+    clean_results=get_total_by_month()
+    return render_template("index.html",total_expenses=total_expenses,monthly_total=clean_results)
 
 @app.route("/add_expense",methods=["POST","GET"])
 @login_required_custom
@@ -146,7 +182,23 @@ def logout():
 @app.route("/charts")
 @login_required_custom
 def load_charts():
-    return render_template("charts.html")
+    clean_results = get_total_by_month()
+
+    months = [m for m, t in clean_results]
+    totals = [t for m, t in clean_results]
+
+    return render_template(
+        "charts.html",chart_months=months,chart_totals=totals
+    )
+@app.route("/charts/category/<month>")
+@login_required_custom
+def load_pie_chart(month):
+    results=get_category_for_each_month(month)
+
+    labels = [category for category, _ in results]
+    totals = [total for _, total in results]
+    return {"labels": labels, "totals": totals}
+
 
 @app.route("/tables")
 @login_required_custom

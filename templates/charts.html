@@ -34,8 +34,15 @@
             </div>
             <!-- Card Body -->
             <div class="card-body">
+                <label class="mb-2">Select Month:</label>
+                <select id="monthSelect" class="form-control mb-3">
+                    {% for month in chart_months %}
+                    <option value="{{ month }}">{{ month }}</option>
+                    {% endfor %}
+                </select>
+
                 <div class="chart-pie pt-4 pb-2">
-                    <canvas id="myPieChart"></canvas>
+                    <canvas id="myPieChart" width="350" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -45,12 +52,136 @@
 
 {% endblock %}
 
-{% block extra_js %}
 <!-- Chart.js -->
+{% block extra_js %}
 <script src="{{ url_for('static', filename='vendor/chart.js/Chart.min.js') }}"></script>
 
-<!-- SB Admin 2 demo chart scripts -->
-<script src="{{ url_for('static', filename='js/demo/chart-area-demo.js') }}"></script>
-<script src="{{ url_for('static', filename='js/demo/chart-pie-demo.js') }}"></script>
+<script>
+    const chartMonths = {{ chart_months | tojson }};
+    const chartTotals = {{ chart_totals | tojson }};
 
+    // Area Chart
+    const ctxArea = document.getElementById('myAreaChart');
+    new Chart(ctxArea, {
+        type: 'line',
+        data: {
+            labels: chartMonths,
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: chartTotals,
+                borderWidth: 2
+            }]
+        }
+    });
+
+    // Pie Chart
+    let pieChart = null;
+
+// a small fixed palette to start with
+const PALETTE = [
+  "#FF6384", "#36A2EB", "#FFCE56",
+  "#4BC0C0", "#9966FF", "#FF9F40",
+  "#8E44AD", "#27AE60", "#3498DB", "#E74C3C",
+  "#1ABC9C", "#F39C12", "#2ECC71", "#9B59B6"
+];
+
+// deterministic color for labels beyond palette using a simple hash -> HSL
+function colorForLabel(label) {
+  // try to keep same colors for same labels
+  const hash = Array.from(label).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 0);
+  const hue = hash % 360;
+  return `hsl(${hue} 70% 55%)`;
+}
+
+// build color array for labels, reusing palette first
+function colorsForLabels(labels) {
+  const colors = [];
+  for (let i = 0; i < labels.length; i++) {
+    if (i < PALETTE.length) colors.push(PALETTE[i]);
+    else colors.push(colorForLabel(labels[i]));
+  }
+  return colors;
+}
+
+document.getElementById("monthSelect").addEventListener("change", function () {
+  const selectedMonth = this.value;
+  if (!selectedMonth) return;
+
+  fetch(`/charts/category/${selectedMonth}`)
+    .then(response => {
+      if (!response.ok) throw new Error("Network response was not ok");
+      return response.json();
+    })
+    .then(data => {
+      // defensive checks
+      const labels = Array.isArray(data.labels) ? data.labels : [];
+      const totals = Array.isArray(data.totals) ? data.totals : [];
+
+      // if no data for selected month, destroy existing chart and show message
+      if (!labels.length || !totals.length || totals.every(v => v === 0)) {
+        if (pieChart) {
+          pieChart.destroy();
+          pieChart = null;
+        }
+        // show a simple "no data" overlay (create if missing)
+        let msg = document.getElementById("pieNoDataMsg");
+        if (!msg) {
+          msg = document.createElement("div");
+          msg.id = "pieNoDataMsg";
+          msg.style.textAlign = "center";
+          msg.style.padding = "1rem";
+          msg.style.color = "#666";
+          msg.innerText = "No category data for this month.";
+          const pieContainer = document.querySelector("#myPieChart").parentElement;
+          pieContainer.appendChild(msg);
+        }
+        return;
+      } else {
+        // remove "no data" message if present
+        const existingMsg = document.getElementById("pieNoDataMsg");
+        if (existingMsg) existingMsg.remove();
+      }
+
+      const ctx = document.getElementById('myPieChart').getContext('2d');
+
+      if (pieChart) {
+        pieChart.destroy();
+      }
+
+      const bgColors = colorsForLabels(labels);
+
+      pieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: totals,
+            backgroundColor: bgColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.raw;
+                  const total = context.dataset.data.reduce((a,b) => a + b, 0);
+                  const pct = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                  return `${context.label}: ${value} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    })
+    .catch(err => {
+      console.error("Failed to fetch category data:", err);
+    });
+});
+</script>
 {% endblock %}
+

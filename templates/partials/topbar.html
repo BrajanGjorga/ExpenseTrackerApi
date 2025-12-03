@@ -5,7 +5,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    USER
+                                    {{current_user.username}}
                                 </span>
                                 <img class="img-profile rounded-circle"
                                      src="{{ url_for('static', filename='img/undraw_profile.svg') }}">
