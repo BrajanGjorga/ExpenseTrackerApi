@@ -1,111 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "layout.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Expense Table</title>
+{% block title %}Expense Table{% endblock %}
 
-    <!-- Custom fonts for this template -->
-    <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,400,700" rel="stylesheet">
+{% block content %}
 
-    <!-- Custom styles -->
-    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
-</head>
+<!-- Page Heading -->
+<h1 class="h3 mb-4 text-gray-800">Expense Report</h1>
 
-<body id="page-top">
-    <div id="wrapper">
-        <!-- Sidebar can stay minimal or removed if not needed -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">All Expenses</h6>
 
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
-                <!-- Page Content -->
-                <div class="container-fluid">
-                    <h1 class="h3 mb-2 text-gray-800">Expenses</h1>
-                    <p class="mb-4">View and export your expenses per month.</p>
+        <!-- Month Filter + Export Button -->
+        <div class="d-flex gap-2">
+            <select id="monthFilter" class="form-control form-control-sm">
+                <option value="">All Months</option>
+                {% for month, total in monthly_total %}
+                <option value="{{ month }}">{{ month }}</option>
+                {% endfor %}
+            </select>
 
-                    <!-- Month Filter & Export Button -->
-                    <div class="mb-3 d-flex align-items-center">
-                        <select id="monthFilter" class="form-control mr-2">
-                            <option value="">All Months</option>
-                            {% for month, _ in monthly_total %}
-                            {% set month_value = month | datetime.strptime('%B %Y') | datetime.strftime('%Y-%m') %}
-                            <option value="{{ month_value }}">{{ month }}</option>
-                            {% endfor %}
-                        </select>
-                        <button id="exportCsvBtn" class="btn btn-success" disabled>Export CSV</button>
-                    </div>
-
-                    <!-- Expense Table -->
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="expenseTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Category</th>
-                                            <th>Description</th>
-                                            <th>Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for expense in expenses %}
-                                        <tr>
-                                            <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
-                                            <td>{{ expense.category }}</td>
-                                            <td>{{ expense.description or '' }}</td>
-                                            <td>${{ "%.2f"|format(expense.amount) }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
-                        <span>© Your Website 2025</span>
-                    </div>
-                </div>
-            </footer>
+            <button id="exportCsvBtn" class="btn btn-sm btn-success">
+                Export CSV
+            </button>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/datatables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="expenseTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount ($)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr data-month="{{ expense.date.strftime('%B %Y') }}">
+                        <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ expense.category }}</td>
+                        <td>{{ expense.description }}</td>
+                        <td>{{ "%.2f"|format(expense.amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 
-    <script>
-        $(document).ready(function () {
-            $('#expenseTable').DataTable({
-                "order": [[0, "desc"]]
-            });
-        });
+            <p id="noResultsMsg" class="text-center text-muted mt-3" style="display: none;">No expenses found for this month.</p>
+        </div>
+    </div>
+</div>
 
-        // CSV Export
-        document.getElementById("monthFilter").addEventListener("change", function () {
-            const month = this.value;
-            const btn = document.getElementById("exportCsvBtn");
-            btn.disabled = !month;
+{% endblock %}
 
-            if (month) {
-                btn.onclick = function () {
-                    window.location.href = `/export_csv/${month}`;
-                };
-            }
-        });
-    </script>
-</body>
-</html>
+{% block extra_js %}
+<script>
+// Filter table by selected month
+document.getElementById("monthFilter").addEventListener("change", function () {
+    const selected = this.value;
+    let hasVisible = false;
+
+    document.querySelectorAll("#expenseTable tbody tr").forEach(row => {
+        const rowMonth = row.dataset.month;
+        const match = (!selected || rowMonth === selected);
+        row.style.display = match ? "" : "none";
+        if (match) hasVisible = true;
+    });
+
+    document.getElementById("noResultsMsg").style.display = hasVisible ? "none" : "block";
+});
+
+// Export CSV button logic
+document.getElementById("exportCsvBtn").addEventListener("click", function () {
+    const selectedMonth = document.getElementById("monthFilter").value;
+
+    if (!selectedMonth) {
+        alert("Please select a month to export data!");
+        return;
+    }
+
+    const formatted = encodeURIComponent(selectedMonth);
+    window.location.href = `/tables/export_csv/${formatted}`;
+});
+</script>
+{% endblock %}

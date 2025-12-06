@@ -1,13 +1,13 @@
 from functools import wraps
 from os import abort
 from datetime import datetime
-from flask import Flask, render_template, request,redirect,flash,url_for
+from flask import Flask, render_template, request,redirect,flash,url_for,send_file
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, ForeignKey, func
 import os
-
+import csv,io
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app=Flask(__name__)
@@ -203,7 +203,38 @@ def load_pie_chart(month):
 @app.route("/tables")
 @login_required_custom
 def load_tables():
-    return render_template("tables.html")
+    expenses=db.session.execute(db.select(Expense).where(Expense.user_id == current_user.id).order_by(Expense.date)).scalars().all()
+    monthly_total=get_total_by_month()
+    return render_template("tables.html",expenses=expenses,monthly_total=monthly_total)
+
+@app.route("/tables/export_csv/<month>")
+@login_required_custom
+def export_table_csv(month):
+    month_filter = datetime.strptime(month, "%B %Y").strftime("%Y-%m")
+    expenses = (
+        db.session.execute(
+            db.select(
+                Expense.date,
+                Expense.category,
+                Expense.description,
+                Expense.amount
+            )
+            .where(Expense.user_id == current_user.id,func.strftime("%Y-%m", Expense.date) == month_filter)).all())
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Category", "Description", "Amount"])
+
+    for row in expenses:
+        writer.writerow([row.date, row.category, row.description, row.amount])
+
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"expenses_{month_filter}.csv"
+    )
 
 
 if __name__ == "__main__":
