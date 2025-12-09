@@ -46,6 +46,15 @@
                                     </div>
 
                                     <!-- Login Form -->
+                                    {% with messages = get_flashed_messages() %}
+                                    {% if messages %}
+                                    <ul class="flashes">
+                                        {% for message in messages %}
+                                        <li>{{ message }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                    {% endwith %}
                                     <form class="user" method="POST" action="{{ url_for('login') }}">
                                         <div class="form-group">
                                             <input type="email" class="form-control form-control-user"

@@ -1,7 +1,6 @@
 from functools import wraps
-from os import abort
 from datetime import datetime
-from flask import Flask, render_template, request,redirect,flash,url_for,send_file
+from flask import Flask, render_template, request,redirect,flash,url_for,send_file,abort
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
@@ -45,7 +44,7 @@ class User(UserMixin,db.Model):
     last_name:Mapped[str]=mapped_column(String,nullable=False)
     username:Mapped[str]=mapped_column(String,nullable=False)
     email:Mapped[str]=mapped_column(String,nullable=False)
-    password:Mapped[str]=mapped_column(Integer,nullable=False)
+    password:Mapped[str]=mapped_column(String,nullable=False)
     expenses = db.relationship('Expense', backref='user', lazy=True)
 
 class Expense(db.Model):
@@ -125,8 +124,8 @@ def register():
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)
         existing_user = db.session.execute(db.select(User).where(User.email == email)).scalar()
         if existing_user:
-            flash("You have already signed up with this email")
-            return redirect(url_for("login"))
+            flash("You have already signed up with this email try logging in instead")
+            return redirect(url_for("register"))
         new_user=User(
             username=username,
             first_name=first_name,

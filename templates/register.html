@@ -58,6 +58,15 @@
                                     <input type="email" class="form-control form-control-user"
                                         name="email" placeholder="Email Address" required>
                                 </div>
+                                {% with messages = get_flashed_messages() %}
+                                {% if messages %}
+                                <ul class="flashes">
+                                    {% for message in messages %}
+                                    <li>{{ message }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                {% endwith %}
 
                                 <div class="form-group row">
 
